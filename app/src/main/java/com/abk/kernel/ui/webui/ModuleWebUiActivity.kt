@@ -150,7 +150,7 @@ class ModuleWebUiActivity : Activity() {
                 "utf-8",
                 200,
                 "OK",
-                mapOf("Access-Control-Allow-Origin" to "*"),
+                mapOf("Access-Control-Allow-Origin" to WEB_ORIGIN),
                 ByteArrayInputStream(bytes)
             )
         }
@@ -162,6 +162,11 @@ class ModuleWebUiActivity : Activity() {
         private val moduleId: String,
         private val moduleDir: String
     ) {
+        private val safeCallbackPattern = Regex("""^[A-Za-z_$][A-Za-z0-9_$.\[\]'"]*$""")
+
+        private fun isSafeCallback(name: String): Boolean =
+            name.isNotBlank() && safeCallbackPattern.matches(name)
+
         @JavascriptInterface
         fun exec(command: String): String =
             RootUtils.execRootCommandForWebUi(command, cwd = moduleDir)
@@ -175,6 +180,7 @@ class ModuleWebUiActivity : Activity() {
 
         @JavascriptInterface
         fun exec(command: String, options: String?, callbackFunc: String) {
+            if (!isSafeCallback(callbackFunc)) return
             thread(name = "abk-webui-exec") {
                 val finalCommand = commandWithOptions(command, options)
                 val result = RootUtils.execRootCommandForWebUi(finalCommand, cwd = moduleDir)
@@ -191,6 +197,7 @@ class ModuleWebUiActivity : Activity() {
 
         @JavascriptInterface
         fun spawn(command: String, args: String, options: String?, callbackFunc: String) {
+            if (!isSafeCallback(callbackFunc)) return
             thread(name = "abk-webui-spawn") {
                 val argString = runCatching {
                     val array = JSONArray(args)
@@ -236,12 +243,15 @@ class ModuleWebUiActivity : Activity() {
             webView.post { activity.finish() }
         }
 
+        private val safeEnvKeyPattern = Regex("^[A-Za-z_][A-Za-z0-9_]*$")
+
         private fun commandWithOptions(command: String, options: String?): String {
             if (options.isNullOrBlank()) return command
             val json = runCatching { JSONObject(options) }.getOrNull() ?: return command
             val prefix = buildString {
                 json.optJSONObject("env")?.let { env ->
                     env.keys().forEach { key ->
+                        if (!safeEnvKeyPattern.matches(key)) return@forEach
                         append("export ")
                         append(key)
                         append("=")
