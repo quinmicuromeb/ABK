@@ -87,6 +87,10 @@ class BuildMonitorService : Service() {
             val prefs = PreferencesRepository(applicationContext)
             val token = prefs.accessToken.first()
             if (token.isNullOrBlank()) {
+                android.util.Log.w(
+                    "BuildMonitorService",
+                    "Cannot monitor run $runId: access token is missing"
+                )
                 return@launch
             }
             val notifyBuild = prefs.notifyBuild.first()
@@ -166,6 +170,11 @@ class BuildMonitorService : Service() {
                             }
                         }
                     } else {
+                        val errorMsg = (result as? Result.Error)?.message ?: "Unknown error"
+                        android.util.Log.w(
+                            "BuildMonitorService",
+                            "Failed to poll workflow run $runId: $errorMsg"
+                        )
                         delay(30_000)
                     }
                 }

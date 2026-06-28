@@ -1115,7 +1115,8 @@ object RootUtils {
                 val encoded = result.output.joinToString("").trim()
                 if (encoded.isBlank()) "" else String(Base64.decode(encoded, Base64.DEFAULT))
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to read ABK extension state for extensionId=$cleanId: ${e.message}", e)
             null
         }
     }

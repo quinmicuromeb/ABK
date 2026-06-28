@@ -95,7 +95,16 @@ fun abkExtensionHostAuthority(context: Context): String =
 fun abkLoadManagedExtensions(context: Context): List<AbkManagedExtension> {
     val runtimeStatus = RootUtils.readManagerRuntimeSnapshot().controlStatusJson
         ?.takeIf { it.isNotBlank() }
-        ?.let { runCatching { Gson().fromJson(it, AbkRuntimeStatus::class.java) }.getOrNull() }
+        ?.let {
+            runCatching { Gson().fromJson(it, AbkRuntimeStatus::class.java) }
+                .onFailure { e ->
+                    android.util.Log.w(
+                        "AbkExtensionHost",
+                        "Failed to parse runtime status JSON for managed extensions: ${e.message}"
+                    )
+                }
+                .getOrNull()
+        }
         ?: return emptyList()
     val discovered = discoverExtensionApps(context)
     val extensionModules = if (runtimeStatus.extensionModules.isNotEmpty()) {

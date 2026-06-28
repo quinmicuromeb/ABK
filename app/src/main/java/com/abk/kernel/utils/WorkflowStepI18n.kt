@@ -161,7 +161,8 @@ object WorkflowStepI18n {
                 if (!response.isSuccessful) return null
                 response.body?.string()
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.d("WorkflowStepI18n", "HTTP fetch failed for $url: ${e.message}")
             null
         }
     }
@@ -192,7 +193,10 @@ object WorkflowStepI18n {
                 .bufferedReader(Charsets.UTF_8)
                 .use { it.readText() }
             parseJson(raw)
-        } catch (_: Exception) {
+        } catch (e: java.io.FileNotFoundException) {
+            null
+        } catch (e: Exception) {
+            android.util.Log.w("WorkflowStepI18n", "Failed to load i18n bundle from assets for lang=$lang: ${e.message}")
             null
         }
     }
@@ -202,7 +206,8 @@ object WorkflowStepI18n {
         if (!file.isFile) return null
         return try {
             parseJson(file.readText(Charsets.UTF_8))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.w("WorkflowStepI18n", "Failed to load i18n bundle from cache for lang=$lang: ${e.message}")
             null
         }
     }
