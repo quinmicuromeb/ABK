@@ -2,10 +2,7 @@
 
 package com.abk.kernel.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
@@ -30,11 +27,12 @@ import com.abk.kernel.R
 import com.abk.kernel.data.model.BuildStatus
 import com.abk.kernel.data.model.WorkflowRun
 import com.abk.kernel.ui.components.AbkScreenHorizontalPadding
+import com.abk.kernel.ui.components.BuildStatusSectionContent
 import com.abk.kernel.ui.components.ExpressiveHeroCard
 import com.abk.kernel.ui.components.ExpressiveSectionCard
 import com.abk.kernel.ui.components.ExpressiveStatusChip
 import com.abk.kernel.ui.components.ExpressiveTopBar
-import com.abk.kernel.ui.components.ShimmerLinearProgress
+import com.abk.kernel.ui.components.buildStatusColor
 import com.abk.kernel.ui.theme.appPageBackgroundColor
 import com.abk.kernel.ui.theme.uiSurfaceColor
 import com.abk.kernel.utils.RootUtils
@@ -149,105 +147,17 @@ fun StatusScreen(
                 icon = Icons.Default.RunCircle,
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                when (state.kernelBuildStatus) {
-                    BuildStatus.IDLE -> StatusRow(Icons.Default.HourglassEmpty, stringResource(R.string.status_no_running_build), false)
-                    BuildStatus.QUEUED -> StatusRow(
-                        Icons.Default.Queue,
-                        if (state.kernelActiveBuildRuns.size > 1) {
-                            stringResource(R.string.status_parallel_build_waiting_runner, state.kernelActiveBuildRuns.size)
-                        } else {
-                            stringResource(R.string.status_build_waiting_runner)
-                        },
-                        false
-                    )
-                    BuildStatus.IN_PROGRESS -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        LoadingIndicator(Modifier.size(24.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("${state.kernelBuildProgress.percent}% · ${state.kernelBuildProgress.currentStep}")
-                    }
-                    BuildStatus.SUCCESS -> StatusRow(Icons.Default.CheckCircle, stringResource(R.string.status_recent_build_success), false)
-                    BuildStatus.FAILURE -> StatusRow(Icons.Default.Error, stringResource(R.string.status_recent_build_failed), true)
-                    BuildStatus.CANCELLED -> StatusRow(Icons.Default.Cancel, stringResource(R.string.status_build_cancelled), true)
-                }
-                val kernelRun = state.kernelCurrentRun
-                if (kernelRun != null && state.kernelBuildProgress.totalSteps > 0) {
-                    Spacer(Modifier.height(8.dp))
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = (state.kernelBuildProgress.percent / 100f).coerceIn(0f, 1f),
-                        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-                        label = "status-progress"
-                    )
-                    ShimmerLinearProgress(
-                        progress = { animatedProgress },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Text(
-                        stringResource(
-                            R.string.status_steps_complete,
-                            state.kernelBuildProgress.completedSteps,
-                            state.kernelBuildProgress.totalSteps
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                val showSingleRunAction = state.kernelActiveBuildRuns.size <= 1
-                state.kernelCurrentRun?.takeIf { showSingleRunAction }?.let { run ->
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(
-                            onClick = {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))
-                                    )
-                                }
-                            },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.status_view_details, run.runNumber), style = MaterialTheme.typography.labelMedium)
-                        }
-                        if (run.isActiveStatusRun()) {
-                            TextButton(
-                                onClick = { vm.cancelWorkflowRun(run.id) },
-                                enabled = run.id !in state.cancellingWorkflowRunIds,
-                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                            ) {
-                                if (run.id in state.cancellingWorkflowRunIds) {
-                                    LoadingIndicator(Modifier.size(16.dp))
-                                } else {
-                                    Icon(Icons.Default.Cancel, null, modifier = Modifier.size(16.dp))
-                                }
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    if (run.id in state.cancellingWorkflowRunIds) {
-                                        stringResource(R.string.status_cancelling)
-                                    } else {
-                                        stringResource(R.string.status_cancel)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                if (state.kernelActiveBuildRuns.size > 1) {
-                    Text(
-                        stringResource(R.string.status_parallel_workflows_desc, state.kernelActiveBuildRuns.size),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                BuildStatusSectionContent(
+                    buildStatus = state.kernelBuildStatus,
+                    buildProgress = state.kernelBuildProgress,
+                    currentRun = state.kernelCurrentRun,
+                    activeBuildRuns = state.kernelActiveBuildRuns,
+                    cancellingWorkflowRunIds = state.cancellingWorkflowRunIds,
+                    progressAnimLabel = "status-progress",
+                    onCancelRun = vm::cancelWorkflowRun
+                )
             }
 
-            // Manager-app build mirror. Rendered only when a manager build is
-            // actually happening / has happened — otherwise the screen would
-            // grow a permanent "No manager build" tile that's just noise.
             if (state.managerBuildStatus != BuildStatus.IDLE || state.managerCurrentRun != null) {
                 ExpressiveSectionCard(
                     title = stringResource(R.string.status_manager_build),
@@ -255,100 +165,15 @@ fun StatusScreen(
                     icon = Icons.Default.Shield,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ) {
-                    val managerProgress = state.managerBuildProgress
-                    when (state.managerBuildStatus) {
-                        BuildStatus.IDLE -> StatusRow(Icons.Default.HourglassEmpty, stringResource(R.string.status_no_running_build), false)
-                        BuildStatus.QUEUED -> StatusRow(
-                            Icons.Default.Queue,
-                            if (state.managerActiveBuildRuns.size > 1) {
-                                stringResource(R.string.status_parallel_build_waiting_runner, state.managerActiveBuildRuns.size)
-                            } else {
-                                stringResource(R.string.status_build_waiting_runner)
-                            },
-                            false
-                        )
-                        BuildStatus.IN_PROGRESS -> Row(verticalAlignment = Alignment.CenterVertically) {
-                            LoadingIndicator(Modifier.size(24.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("${managerProgress.percent}% · ${managerProgress.currentStep}")
-                        }
-                        BuildStatus.SUCCESS -> StatusRow(Icons.Default.CheckCircle, stringResource(R.string.status_recent_build_success), false)
-                        BuildStatus.FAILURE -> StatusRow(Icons.Default.Error, stringResource(R.string.status_recent_build_failed), true)
-                        BuildStatus.CANCELLED -> StatusRow(Icons.Default.Cancel, stringResource(R.string.status_build_cancelled), true)
-                    }
-                    val managerRun = state.managerCurrentRun
-                    if (managerRun != null && managerProgress.totalSteps > 0) {
-                        Spacer(Modifier.height(8.dp))
-                        val animatedProgress by animateFloatAsState(
-                            targetValue = (managerProgress.percent / 100f).coerceIn(0f, 1f),
-                            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-                            label = "status-manager-progress"
-                        )
-                        ShimmerLinearProgress(
-                            progress = { animatedProgress },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                            stringResource(R.string.status_steps_complete, managerProgress.completedSteps, managerProgress.totalSteps),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    val showSingleManagerAction = state.managerActiveBuildRuns.size <= 1
-                    state.managerCurrentRun?.takeIf { showSingleManagerAction }?.let { run ->
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_VIEW, Uri.parse(run.htmlUrl))
-                                        )
-                                    }
-                                },
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.status_view_details, run.runNumber), style = MaterialTheme.typography.labelMedium)
-                            }
-                            if (run.isActiveStatusRun()) {
-                                TextButton(
-                                    onClick = { vm.cancelWorkflowRun(run.id) },
-                                    enabled = run.id !in state.cancellingWorkflowRunIds,
-                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) {
-                                    if (run.id in state.cancellingWorkflowRunIds) {
-                                        LoadingIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    } else {
-                                        Icon(Icons.Default.Cancel, null, modifier = Modifier.size(16.dp))
-                                    }
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        if (run.id in state.cancellingWorkflowRunIds) {
-                                            stringResource(R.string.status_cancelling)
-                                        } else {
-                                            stringResource(R.string.status_cancel)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (state.managerActiveBuildRuns.size > 1) {
-                        Text(
-                            stringResource(R.string.status_parallel_workflows_desc, state.managerActiveBuildRuns.size),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    BuildStatusSectionContent(
+                        buildStatus = state.managerBuildStatus,
+                        buildProgress = state.managerBuildProgress,
+                        currentRun = state.managerCurrentRun,
+                        activeBuildRuns = state.managerActiveBuildRuns,
+                        cancellingWorkflowRunIds = state.cancellingWorkflowRunIds,
+                        progressAnimLabel = "status-manager-progress",
+                        onCancelRun = vm::cancelWorkflowRun
+                    )
                 }
             }
 
@@ -643,12 +468,4 @@ private fun buildStatusDisplay(status: BuildStatus): String = when (status) {
     BuildStatus.CANCELLED -> stringResource(R.string.status_stopped)
 }
 
-@Composable
-private fun buildStatusColor(status: BuildStatus) = when (status) {
-    BuildStatus.IDLE -> MaterialTheme.colorScheme.outline
-    BuildStatus.QUEUED -> MaterialTheme.colorScheme.tertiary
-    BuildStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
-    BuildStatus.SUCCESS -> MaterialTheme.colorScheme.primary
-    BuildStatus.FAILURE -> MaterialTheme.colorScheme.error
-    BuildStatus.CANCELLED -> MaterialTheme.colorScheme.outline
-}
+

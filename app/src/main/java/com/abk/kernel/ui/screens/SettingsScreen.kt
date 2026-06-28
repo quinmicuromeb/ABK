@@ -286,7 +286,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -338,7 +338,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -383,7 +383,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -408,7 +408,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -452,7 +452,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -489,7 +489,7 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .then(childPageBack.backTransformModifier())
             ) {
-                SettingsPageBackground(
+                AppPageBackground(
                     backgroundUri = state.customBackgroundUri,
                     backgroundImageEnabled = state.backgroundImageEnabled
                 )
@@ -514,17 +514,6 @@ fun SettingsScreen(
             }
         }
     }
-}
-
-@Composable
-private fun SettingsPageBackground(
-    backgroundUri: String?,
-    backgroundImageEnabled: Boolean
-) {
-    AppPageBackground(
-        backgroundUri = backgroundUri,
-        backgroundImageEnabled = backgroundImageEnabled
-    )
 }
 
 @Composable

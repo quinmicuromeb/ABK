@@ -2194,7 +2194,7 @@ object RootUtils {
     private fun buildShellCommand(args: List<String>): String =
         args.joinToString(" ") { shellQuote(it) }
 
-    private fun shellQuote(value: String): String = "'${value.replace("'", "'\"'\"'")}'"
+    internal fun shellQuote(value: String): String = "'${value.replace("'", "'\"'\"'")}'"
 
     internal fun normalizeBootSlotSuffix(slotSuffix: String?): String? = when (slotSuffix?.trim()?.lowercase()) {
         "_a", "a" -> "_a"
