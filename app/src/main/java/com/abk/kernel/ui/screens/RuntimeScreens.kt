@@ -61,6 +61,7 @@ import com.abk.kernel.data.model.AbkRuntimeBuildInfo
 import com.abk.kernel.data.model.AbkRuntimeModule
 import com.abk.kernel.data.model.AbkRuntimeStatus
 import com.abk.kernel.ui.components.AbkScreenHorizontalPadding
+import com.abk.kernel.ui.components.ModuleInstallDialog
 import com.abk.kernel.ui.components.ObserveChildPageVisibility
 import com.abk.kernel.ui.components.childPageOverlayEnterTransition
 import com.abk.kernel.ui.components.childPageOverlayExitTransition
@@ -549,7 +550,7 @@ fun InstalledModulesScreen(
     }
 
     if (installDialogVisible) {
-        RuntimeModuleInstallDialog(
+        ModuleInstallDialog(
             running = installRunning,
             success = installSuccess,
             logLines = installLog,
@@ -1105,88 +1106,6 @@ private fun RuntimeModuleUninstallConfirmDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun RuntimeModuleInstallDialog(
-    running: Boolean,
-    success: Boolean?,
-    logLines: List<String>,
-    onClose: () -> Unit,
-    onReboot: () -> Unit
-) {
-    val terminalScroll = rememberScrollState()
-    val colorScheme = MaterialTheme.colorScheme
-    val isLightTheme = colorScheme.surface.luminance() > 0.5f
-    val terminalContainer = if (isLightTheme) {
-        colorScheme.surfaceContainerHighest
-    } else {
-        colorScheme.surfaceContainerLowest
-    }
-
-    LaunchedEffect(logLines.size) {
-        terminalScroll.animateScrollTo(terminalScroll.maxValue)
-    }
-
-    AlertDialog(
-        onDismissRequest = { if (!running) onClose() },
-        icon = {
-            when {
-                running -> LoadingIndicator(modifier = Modifier.size(24.dp))
-                success == true -> Icon(Icons.Default.CheckCircle, null, tint = colorScheme.primary)
-                success == false -> Icon(Icons.Default.Error, null, tint = colorScheme.error)
-                else -> Icon(Icons.Default.UploadFile, null)
-            }
-        },
-        title = {
-            Text(if (running) stringResource(R.string.runtime_installing_module) else stringResource(R.string.runtime_install_module))
-        },
-        text = {
-            Surface(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 190.dp, max = 360.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = terminalContainer,
-                contentColor = colorScheme.onSurface,
-                border = BorderStroke(1.dp, colorScheme.outlineVariant)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(terminalScroll)
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    logLines.ifEmpty { listOf(stringResource(R.string.runtime_waiting_output)) }.forEach { line ->
-                        Text(
-                            text = line,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = if (line.startsWith("${'$'}")) colorScheme.primary else colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            if (running) {
-                TextButton(onClick = {}, enabled = false) { Text(stringResource(R.string.runtime_running)) }
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onClose) { Text(stringResource(R.string.close)) }
-                    if (success == true) {
-                        Button(
-                            onClick = onReboot,
-                            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.RestartAlt, null, modifier = Modifier.size(17.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.runtime_reboot))
-                        }
-                    }
-                }
             }
         }
     )

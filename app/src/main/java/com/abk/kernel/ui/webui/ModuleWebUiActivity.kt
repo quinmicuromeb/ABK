@@ -280,6 +280,6 @@ class ModuleWebUiActivity : Activity() {
             else -> "text/plain"
         }
 
-        private fun shellQuote(value: String): String = "'${value.replace("'", "'\"'\"'")}'"
+        private fun shellQuote(value: String): String = RootUtils.shellQuote(value)
     }
 }

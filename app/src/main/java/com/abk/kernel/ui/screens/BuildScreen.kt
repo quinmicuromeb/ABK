@@ -76,6 +76,7 @@ import com.abk.kernel.ui.components.childPageOverlayExitTransition
 import com.abk.kernel.ui.components.childPageScrimExitTransition
 import com.abk.kernel.ui.components.rememberChildPageBackController
 import com.abk.kernel.ui.components.rememberChildPageOverlayTransition
+import com.abk.kernel.ui.components.buildStatusColor
 import com.abk.kernel.ui.components.ExpressiveHeroCard
 import com.abk.kernel.ui.components.ShimmerLinearProgress
 import com.abk.kernel.ui.components.ExpressiveListItem
@@ -3053,16 +3054,6 @@ private fun SectionCard(section: BuildSection, content: @Composable ColumnScope.
         },
         content = content
     )
-}
-
-@Composable
-private fun buildStatusColor(status: BuildStatus) = when (status) {
-    BuildStatus.IDLE -> MaterialTheme.colorScheme.outline
-    BuildStatus.QUEUED -> MaterialTheme.colorScheme.tertiary
-    BuildStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
-    BuildStatus.SUCCESS -> MaterialTheme.colorScheme.primary
-    BuildStatus.FAILURE -> MaterialTheme.colorScheme.error
-    BuildStatus.CANCELLED -> MaterialTheme.colorScheme.outline
 }
 
 @Composable
