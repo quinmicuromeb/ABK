@@ -15,7 +15,14 @@ internal fun mergeRuntimeStatus(
     ksuModulesJson: String?,
 ): AbkRuntimeStatus {
     val controlStatus = controlJson?.let { body ->
-        runCatching { gson.fromJson(body, AbkRuntimeStatus::class.java) }.getOrNull()
+        runCatching { gson.fromJson(body, AbkRuntimeStatus::class.java) }
+            .onFailure { e ->
+                android.util.Log.w(
+                    "RuntimeStatusMerge",
+                    "Failed to parse control status JSON: ${e.message}"
+                )
+            }
+            .getOrNull()
     }
     val ksuModules = parseKsuModules(gson, ksuModuleListType, ksuModulesJson)
     val controlModules = controlStatus?.modules.orEmpty().map { module ->
@@ -86,6 +93,11 @@ internal fun parseKsuModules(gson: Gson, ksuModuleListType: Type, json: String?)
     if (json.isNullOrBlank()) return emptyList()
     val records = runCatching {
         gson.fromJson<List<Map<String, Any?>>>(json, ksuModuleListType)
+    }.onFailure { e ->
+        android.util.Log.w(
+            "RuntimeStatusMerge",
+            "Failed to parse KSU modules JSON: ${e.message}"
+        )
     }.getOrNull().orEmpty()
     return records.mapNotNull { item ->
         val id = item.runtimeString("id")

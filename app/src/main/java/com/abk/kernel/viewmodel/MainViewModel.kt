@@ -346,7 +346,13 @@ class MainViewModel @JvmOverloads constructor(
                     monitoredRunIds.remove(run.id)
                     processBuildQueue()
                 }
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "MainViewModel",
+                    "Failed to process build status broadcast: ${e.message}",
+                    e
+                )
+            }
         }
     }
 
@@ -604,6 +610,13 @@ class MainViewModel @JvmOverloads constructor(
             prefs.buildConfigJson.collect { json ->
                 if (!json.isNullOrBlank()) {
                     runCatching { gson.fromJson(json, KernelBuildConfig::class.java) }
+                        .onFailure { e ->
+                            android.util.Log.w(
+                                "MainViewModel",
+                                "Failed to deserialize saved build config: ${e.message}",
+                                e
+                            )
+                        }
                         .getOrNull()
                         ?.let { config ->
                             hasSavedBuildConfig = true
